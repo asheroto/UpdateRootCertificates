@@ -18,6 +18,7 @@
 [Version 2.0.0] - Refactored & signed code.
 [Version 3.0.0] - Major rewrite.  Switched from Certificate Trusts Lists to Certificates.
 [Version 3.1.0] - Added CheckForUpdate, UpdateSelf, Version, and Help parameters. Added test for admin privileges. Improved output formatting.
+[Version 3.1.1] - Released cmd version.
 
 #>
 
@@ -49,7 +50,7 @@
 .PARAMETER Help
     Displays full help documentation for this script.
 .NOTES
-    Version      : 3.1.0
+    Version      : 3.1.1
     Created by   : asheroto
 .LINK
     Project Site: https://github.com/asheroto/UpdateRootCertificates
@@ -69,7 +70,7 @@ param (
 )
 
 # Script information
-$CurrentVersion = '3.1.0'
+$CurrentVersion = '3.1.1'
 $RepoOwner = 'asheroto'
 $RepoName = 'UpdateRootCertificates'
 $PowerShellGalleryName = 'UpdateRootCertificates'
