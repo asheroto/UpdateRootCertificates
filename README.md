@@ -18,6 +18,27 @@ This script downloads and installs the latest `.sst` files from Microsoft contai
 
 ![screenshot](https://github.com/user-attachments/assets/7c7cdd5b-fe76-47e5-8895-33126dc33b3a)
 
+## Version Differences
+
+This project includes two versions. The PowerShell script is generally recommended, but the batch file version is included for compatibility with older systems 
+
+- **PowerShell script (`UpdateRootCertificates.ps1`)**  
+  - Runs silently (no interaction required)
+  - Does not open a web browser  
+  - Checks registry settings related to certificate auto-update  
+  - Supports parameters like `-Verbose`, `-CheckForUpdate`, and `-UpdateSelf`  
+  - Does **not** remove root certificates (PowerShell has no equivalent to `updroots -d`)  
+    - This has minimal impact, because untrusted or revoked certificates are still applied via `disallowedcert.sst`, which adds entries to the Disallowed store and effectively blocks them
+  - Compatible with Windows 7 and newer
+
+- **Batch script (`UpdateRootCertificates.cmd`)**  
+  - Opens certificate download links in the default browser  
+  - User must manually save the `.sst` files into the script folder  
+  - Prompts for user input and cannot run fully silently  
+  - Supports removal of outdated root certs via `updroots -d`  
+  - Compatible **only** with Windows XP, Vista, 7, and 8
+  - Not compatible with Windows 10 or newer
+
 ## Running the script
 
 You can either:
