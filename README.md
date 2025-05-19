@@ -29,37 +29,39 @@ This project includes two versions. The PowerShell script is generally recommend
   - Supports parameters like `-Verbose`, `-CheckForUpdate`, and `-UpdateSelf`  
   - Does **not** remove root certificates (PowerShell has no equivalent to `updroots -d`)  
     - This has minimal impact, because untrusted or revoked certificates are still applied via `disallowedcert.sst`, which adds entries to the Disallowed store and effectively blocks them
-  - Compatible with Windows 7 and newer
+  - Compatible with Windows 7 through 11 (PowerShell 5.1 required; included by default in Windows 10 and 11)
 
 - **Batch script (`UpdateRootCertificates.cmd`)**  
   - Opens certificate download links in the default browser  
   - User must manually save the `.sst` files into the script folder  
   - Prompts for user input and cannot run fully silently  
   - Supports removal of outdated root certs via `updroots -d`  
-  - Compatible **only** with Windows XP, Vista, 7, and 8
-  - Not compatible with Windows 10 or newer
+  - Compatible with Windows XP through 8 (requires `updroots.exe`, which is not available in Windows 10 or newer)
 
-## Running the script
+## Running the Script
 
-You can either:
+You can run the script using either version, depending on your operating system:
 
-- Download the [latest code-signed release](https://github.com/asheroto/Root-Certificate-Updater/releases/latest/download/UpdateRootCertificates.ps1) of the script
+- **PowerShell script (`UpdateRootCertificates.ps1`)**  
+  Recommended for Windows 7 and newer. You can either:
+  
+  - Download the [latest code-signed release](https://github.com/asheroto/Root-Certificate-Updater/releases/latest/download/UpdateRootCertificates.ps1)
 
-**OR**
+    **OR**
 
-- Install it from PowerShell Gallery using:
+  - Install it from PowerShell Gallery using:
+  
+    ```powershell
+    Install-Script UpdateRootCertificates -Force
+    ```
 
-```powershell
+  Published here: [PowerShell Gallery – UpdateRootCertificates](https://www.powershellgallery.com/packages/UpdateRootCertificates)
 
-Install-Script UpdateRootCertificates -Force
+- **Batch script (`UpdateRootCertificates.cmd`)**  
+  Use this version only on Windows XP through 8, where `updroots.exe` is available.  
+  Just double-click the `.cmd` file and follow the on-screen instructions.
 
-```
-
-Published here: [PowerShell Gallery – UpdateRootCertificates](https://www.powershellgallery.com/packages/UpdateRootCertificates)
-
----
-
-## Usage
+## PowerShell Version Usage
 
 | Command                                  | Description                                                      |
 | ---------------------------------------- | ---------------------------------------------------------------- |
@@ -70,12 +72,3 @@ Published here: [PowerShell Gallery – UpdateRootCertificates](https://www.powe
 | `UpdateRootCertificates -UpdateSelf`     | Updates the script to the latest version from PowerShell Gallery |
 | `UpdateRootCertificates -Version`        | Displays the current script version                              |
 | `UpdateRootCertificates -Help`           | Displays full help documentation                                 |
-
----
-
-## Other Notes
-
-- The PowerShell version downloads `.sst` files directly (e.g., `authroots.sst`, `updroots.sst`, `roots.sst`, `disallowedcert.sst`) from Microsoft’s root certificate update service.
-- Files are installed using `certutil`
-- All `.sst` files are removed after installation unless the process fails.
-- The CMD and EXE-based versions have been replaced entirely by this PowerShell-based solution.

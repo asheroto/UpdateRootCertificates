@@ -1,6 +1,6 @@
 :: Author: asheroto
 :: Project: https://github.com/asheroto/UpdateRootCertificates
-:: Version 3.1.0
+:: Version 3.1.1
 :: This program updates the trusted and disallowed root certificates on your system
 :: by downloading and installing the latest versions directly from Microsoft.
 :: These certificates are used by Windows to determine whether to trust or block
