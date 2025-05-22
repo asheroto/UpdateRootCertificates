@@ -12,8 +12,6 @@
 
 Update root certificates (and disallowed certificates) on Windows.
 
-This script downloads and installs the latest `.sst` files from Microsoft containing trusted and disallowed root certificates.
-
 **No changes are made to any system settings**, and **Windows Update is NOT required** for this to work.
 
 ![screenshot](https://github.com/user-attachments/assets/7c7cdd5b-fe76-47e5-8895-33126dc33b3a)
