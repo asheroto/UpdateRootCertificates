@@ -8,7 +8,7 @@
 # UpdateRootCertificates (Root Certificate Updater)
 
 > [!NOTE]
-> The EXE (GUI) version has been deprecated and replaced by the PowerShell script version, which is now the only actively supported method. The EXE remains available in the repository for historical reference but is no longer maintained. The repository `Root-Certificate-Updater` has been renamed to `UpdateRootCertificates` to match the name of the script.
+> The EXE (GUI) version has been deprecated and replaced by the PowerShell script and CMD versions. The EXE remains available in the repository for historical reference but is no longer maintained. The repository `Root-Certificate-Updater` has been renamed to `UpdateRootCertificates` to match the name of the script.
 
 Update root certificates (and disallowed certificates) on Windows.
 
