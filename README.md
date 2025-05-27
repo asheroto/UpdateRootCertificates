@@ -24,6 +24,7 @@ Update root and disallowed certificates on Windows. No system settings are chang
 The EXE version is the easiest and most compatible method.
 
 [Download the latest version (ZIP)](https://github.com/asheroto/UpdateRootCertificates/releases/latest/download/UpdateRootCertificates.zip)
+
 **ZIP Password:** `password` (used to avoid false positives from antivirus software)
 
 ### Screenshot
