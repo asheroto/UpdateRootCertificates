@@ -137,7 +137,7 @@ Partial Class MainWindow
         Me.MoreInfoCTL.Font = New System.Drawing.Font("Segoe UI", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.MoreInfoCTL.Location = New System.Drawing.Point(12, 378)
         Me.MoreInfoCTL.Name = "MoreInfoCTL"
-        Me.MoreInfoCTL.Size = New System.Drawing.Size(147, 13)
+        Me.MoreInfoCTL.Size = New System.Drawing.Size(146, 13)
         Me.MoreInfoCTL.TabIndex = 9
         Me.MoreInfoCTL.TabStop = True
         Me.MoreInfoCTL.Text = "About Certificate Trust Lists"
@@ -187,7 +187,7 @@ Partial Class MainWindow
         Me.MaximizeBox = False
         Me.Name = "MainWindow"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "Root Certificate Updater"
+        Me.Text = "Update Root Certificates"
         Me.ResumeLayout(False)
         Me.PerformLayout()
 

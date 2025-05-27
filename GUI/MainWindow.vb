@@ -1,6 +1,7 @@
 ﻿Imports System.ComponentModel
 Imports System.IO
 Imports System.Net
+Imports Newtonsoft.Json.Linq
 
 Friend Class MainWindow
 
@@ -15,7 +16,7 @@ Friend Class MainWindow
         Dim args() As String = {"-h", "/h", "--help", "-help", "/help", "/?"}
         'If any of the arguments are found, show the help dialog
         If Environment.GetCommandLineArgs.Intersect(args, StringComparer.OrdinalIgnoreCase).Any Then
-            MessageBox.Show("Root Certificate Updater" + vbNewLine + vbNewLine + "Usage: RootCertificateUpdater.exe [-NoCleanup]" + vbNewLine + vbNewLine + "Example: RootCertificateUpdater.exe -NoCleanup" + vbNewLine + vbNewLine + "The -NoCleanup argument will keep the temp folder containing the files and logs. This is useful for debugging purposes.", "Help", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            MessageBox.Show("UpdateRootCertificates" + vbNewLine + vbNewLine + "Usage: UpdateRootCertificates.exe [-NoCleanup]" + vbNewLine + vbNewLine + "Example: UpdateRootCertificates.exe -NoCleanup" + vbNewLine + vbNewLine + "The -NoCleanup argument will keep the temp folder containing the files and logs. This is useful for debugging purposes.", "Help", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Environment.Exit(0)
         End If
 
@@ -66,51 +67,56 @@ Friend Class MainWindow
 
         If BackgroundWorker_AppUpdate.IsBusy = False Then BackgroundWorker_AppUpdate.RunWorkerAsync()
     End Sub
-
-    ''' <summary>
-    ''' Checks for updates to the program.
-    ''' </summary>
-    ''' <param name="sender"></param>
-    ''' <param name="e"></param>
     Private Sub BackgroundWorker_AppUpdate_DoWork(sender As Object, e As DoWorkEventArgs) Handles BackgroundWorker_AppUpdate.DoWork
         Try
-            Dim hasConnection As Boolean = My.Computer.Network.Ping("api.asher.tools")
-            If hasConnection = False Then Throw New Exception("Cannot ping asher.tools")
+            Dim hasConnection As Boolean = My.Computer.Network.Ping("github.com")
+            If hasConnection = False Then Throw New Exception("Cannot ping github.com")
 
-            'Gets the latest version number from the API
-            Dim api_data = New WebClient().DownloadString("https://api.asher.tools/software/root-certificate-updater")
-            Dim api_ashertools As API = JsonConvert.DeserializeObject(Of API)(api_data)
+            Dim wc As New WebClient()
+            wc.Headers.Add("User-Agent", "UpdateRootCertificates")
 
-            'Compare the latest version number to the current version number
-            Dim latest_version = New Version(api_ashertools.version_number)
-            Dim my_version = New Version(My.Application.Info.Version.ToString)
-            Dim result = latest_version.CompareTo(my_version)
+            Dim json As String = wc.DownloadString("https://api.github.com/repos/asheroto/UpdateRootCertificates/releases/latest")
+            Dim jObj As JObject = JObject.Parse(json)
 
-            'If the result is greater than 0, that means there is a newer version available
+            Dim latestVersionStr As String = jObj("tag_name").ToString().TrimStart("v"c)
+            Dim latestVersion As New Version(latestVersionStr)
+            Dim myVersion As New Version(My.Application.Info.Version.ToString)
+            Dim result = latestVersion.CompareTo(myVersion)
+
             If result > 0 Then
-                'Newer version available
-                Me.Invoke(Sub()
-                              Dim ask = MsgBox("Newer version available, click OK to Download.", vbInformation + vbOKCancel)
+                Dim assets = jObj("assets")
+                Dim zipAsset = assets.FirstOrDefault(Function(a) a("name").ToString().ToLower().EndsWith("updaterootcertificates.zip"))
 
-                              If ask = vbOK Then
-                                  Dim x As New Process
-                                  x.StartInfo.UseShellExecute = True
-                                  x.StartInfo.FileName = api_ashertools.download_url
-                                  x.StartInfo.WindowStyle = ProcessWindowStyle.Normal
-                                  x.Start()
-                              End If
-                          End Sub)
+                If zipAsset IsNot Nothing Then
+                    Dim downloadUrl As String = zipAsset("browser_download_url").ToString()
+
+                    If Not String.IsNullOrWhiteSpace(downloadUrl) Then
+                        Debug.WriteLine($"Download URL: {downloadUrl}")
+
+                        Me.Invoke(Sub()
+                                      Dim ask = MsgBox("Newer version available. Click OK to download the ZIP. The password is 'password'.", vbInformation + vbOKCancel)
+                                      If ask = vbOK Then
+                                          Dim x As New Process
+                                          x.StartInfo.UseShellExecute = True
+                                          x.StartInfo.FileName = downloadUrl
+                                          x.StartInfo.WindowStyle = ProcessWindowStyle.Normal
+                                          x.Start()
+                                      End If
+                                  End Sub)
+                    End If
+                End If
             Else
-                'No newer version available
+                Debug.WriteLine("No new version available")
             End If
         Catch ex As Exception
-
+            ' Optional: log or handle error
         End Try
     End Sub
 
+
     Private Sub ThirdPartyLicenseInfo_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles ThirdPartyLicenseInfo.LinkClicked
         Try
-            Process.Start("https://github.com/asheroto/Root-Certificate-Updater/blob/master/LICENSE")
+            Process.Start("https://github.com/asheroto/UpdateRootCertificates/blob/master/LICENSE")
         Catch ex As Exception
 
         End Try
@@ -135,7 +141,7 @@ Friend Class MainWindow
 
     Private Sub Label_ReportIssue_LinkClicked(sender As Object, e As LinkLabelLinkClickedEventArgs) Handles Label_ReportIssue.LinkClicked
         Try
-            Process.Start("https://github.com/asheroto/Root-Certificate-Updater/issues")
+            Process.Start("https://github.com/asheroto/UpdateRootCertificates/issues")
         Catch ex As Exception
 
         End Try

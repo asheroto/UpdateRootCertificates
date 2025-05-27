@@ -7,10 +7,10 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("Root Certificate Updater")>
+<Assembly: AssemblyTitle("UpdateRootCertificates")>
 <Assembly: AssemblyDescription("Downloads the latest root certificate lists from Microsoft and installs them on your computer.")>
 <Assembly: AssemblyCompany("asher.tools")>
-<Assembly: AssemblyProduct("Root Certificate Updater")>
+<Assembly: AssemblyProduct("UpdateRootCertificates")>
 <Assembly: AssemblyCopyright("GNU GPLv3")>
 <Assembly: AssemblyTrademark("")>
 
@@ -30,5 +30,5 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")>
 
-<Assembly: AssemblyVersion("2.0.0.0")>
-<Assembly: AssemblyFileVersion("2.0.0.0")>
+<Assembly: AssemblyVersion("4.0.0.0")>
+<Assembly: AssemblyFileVersion("4.0.0.0")>
