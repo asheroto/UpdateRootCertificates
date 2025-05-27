@@ -7,66 +7,71 @@
 
 # UpdateRootCertificates (Root Certificate Updater)
 
-> [!NOTE]
-> We are in transition back to the EXE version. Please see release version 2.0 with the EXE version if you have issues with the CMD or PowerShell versions.
+Update root and disallowed certificates on Windows. No system settings are changed, and Windows Update is **not** required.
 
-Update root certificates (and disallowed certificates) on Windows.
+**The PowerShell and CMD versions are now deprecated** due to compatibility and dependency issues on some systems. The recommended method going forward is the standalone EXE.
 
-**No changes are made to any system settings**, and **Windows Update is NOT required** for this to work.
+## Features
 
-![screenshot](https://github.com/user-attachments/assets/7c7cdd5b-fe76-47e5-8895-33126dc33b3a)
+* Updates trusted and disallowed root certificates
+* Does **not** require Windows Update
+* Does **not** alter any Windows settings
+* Works on Windows XP through 11
+* No installation required
 
-## Version Differences
+## Recommended: EXE Version
 
-This project includes two versions. The PowerShell script is generally recommended, but the batch file version is included for compatibility with older systems 
+The EXE version is the easiest and most compatible method.
 
-- **PowerShell script (`UpdateRootCertificates.ps1`)**  
-  - Runs silently (no interaction required)
-  - Does not open a web browser  
-  - Checks registry settings related to certificate auto-update  
-  - Supports parameters like `-Verbose`, `-CheckForUpdate`, and `-UpdateSelf`  
-  - Does **not** remove root certificates (PowerShell has no equivalent to `updroots -d`)  
-    - This has minimal impact, because untrusted or revoked certificates are still applied via `disallowedcert.sst`, which adds entries to the Disallowed store and effectively blocks them
-  - Compatible with Windows 7 through 11 (PowerShell 5.1 required; included by default in Windows 10 and 11)
+[Download the latest version (ZIP)](https://github.com/asheroto/UpdateRootCertificates/releases/latest/download/UpdateRootCertificates.zip)
+**ZIP Password:** `password` (used to avoid false positives from antivirus software)
 
-- **Batch script (`UpdateRootCertificates.cmd`)**  
-  - Opens certificate download links in the default browser  
-  - User must manually save the `.sst` files into the script folder  
-  - Prompts for user input and cannot run fully silently  
-  - Supports removal of outdated root certs via `updroots -d`  
-  - Compatible with Windows XP through 8 (requires `updroots.exe`, which is not available in Windows 10 or newer)
+### Screenshot
+![UpdateRootCertificates.exe](https://github.com/user-attachments/assets/62538129-a827-4665-9735-87c8398f7e7f)
 
-## Running the Script
+---
 
-You can run the script using either version, depending on your operating system:
+## Version Support Table
 
-- **PowerShell script (`UpdateRootCertificates.ps1`)**  
-  Recommended for Windows 7 and newer. You can either:
-  
-  - Download the [latest code-signed release](https://github.com/asheroto/Root-Certificate-Updater/releases/latest/download/UpdateRootCertificates.ps1)
+| Version                      | Supported OS    | Notes                                |
+| ---------------------------- | --------------- | ------------------------------------ |
+| `RootCertificateUpdater.exe` | Windows XP – 11 | Recommended method                   |
+| `UpdateRootCertificates.ps1` | Windows 7 – 11  | Deprecated; requires PowerShell 5.1+ |
+| `UpdateRootCertificates.cmd` | Windows XP – 8  | Deprecated; requires `updroots.exe`  |
 
-    **OR**
+---
 
-  - Install it from PowerShell Gallery using:
-  
-    ```powershell
-    Install-Script UpdateRootCertificates -Force
-    ```
+## Deprecated: PowerShell and CMD Versions
 
-  Published here: [PowerShell Gallery – UpdateRootCertificates](https://www.powershellgallery.com/packages/UpdateRootCertificates)
+These options are still available for legacy use but are no longer maintained.
 
-- **Batch script (`UpdateRootCertificates.cmd`)**  
-  Use this version only on Windows XP through 8, where `updroots.exe` is available.  
-  Just double-click the `.cmd` file and follow the on-screen instructions.
+### PowerShell Script (`UpdateRootCertificates.ps1`)
 
-## PowerShell Version Usage
+> ⚠️ Deprecated. Use the EXE version instead.
 
-| Command                                  | Description                                                      |
-| ---------------------------------------- | ---------------------------------------------------------------- |
-| `UpdateRootCertificates`                 | Normal execution                                                 |
-| `UpdateRootCertificates -Force`          | Skips the 10-second wait before running                          |
-| `UpdateRootCertificates -Verbose`        | Shows detailed output during certificate installation            |
-| `UpdateRootCertificates -CheckForUpdate` | Checks for the latest version of the script                      |
-| `UpdateRootCertificates -UpdateSelf`     | Updates the script to the latest version from PowerShell Gallery |
-| `UpdateRootCertificates -Version`        | Displays the current script version                              |
-| `UpdateRootCertificates -Help`           | Displays full help documentation                                 |
+Still available on [PowerShell Gallery](https://www.powershellgallery.com/packages/UpdateRootCertificates).
+
+#### Usage
+
+```powershell
+Install-Script UpdateRootCertificates -Force
+UpdateRootCertificates -CheckForUpdate
+```
+
+| Command                  | Description                     |
+| ------------------------ | ------------------------------- |
+| `UpdateRootCertificates` | Normal execution                |
+| `-Force`                 | Skips wait time before running  |
+| `-Verbose`               | Shows detailed log output       |
+| `-CheckForUpdate`        | Checks for a newer version      |
+| `-UpdateSelf`            | Updates the script from Gallery |
+| `-Version`               | Shows current script version    |
+| `-Help`                  | Shows usage info                |
+
+### Batch Script (`UpdateRootCertificates.cmd`)
+
+> ⚠️ Deprecated. Use only on Windows XP–8 where `updroots.exe` is available.
+
+* Opens certificate download links in browser
+* Requires manual interaction
+* Supports cert removal (`updroots -d`)
