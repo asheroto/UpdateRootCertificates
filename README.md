@@ -20,11 +20,11 @@ Update root and disallowed certificates on Windows. No system settings are chang
 * No installation required
 
 ## Prerequisites
-This tool requires the .NET Framework.
+This tool requires the .NET Framework. Windows 10 and later include it by default.
 
-For Windows XP/7, install [.NET Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=17718&msockid=29520b892cd865e332cb1eae2d0e64c0) if it is not already installed.
+For Windows XP, 7, or 8, install [.NET Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=17718&msockid=29520b892cd865e332cb1eae2d0e64c0) if it is not already present.
 
-While .NET Framework 4.8 is preferred, it requires a trusted root certificate, so version 4.0 is generally the most compatible choice.
+.NET Framework 4.8 is recommended, but since it requires a trusted root certificate, version 4.0 is typically the safest choice for compatibility.
 
 ## Download
 
