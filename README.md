@@ -1,12 +1,16 @@
-# UpdateRootCertificates
+[![Release](https://img.shields.io/github/v/release/asheroto/Root-Certificate-Updater)](https://github.com/asheroto/Root-Certificate-Updater/releases)
+[![GitHub Release Date - Published_At](https://img.shields.io/github/release-date/asheroto/Root-Certificate-Updater)](https://github.com/asheroto/Root-Certificate-Updater/releases)
+[![GitHub Downloads - All Releases](https://img.shields.io/github/downloads/asheroto/Root-Certificate-Updater/total)](https://github.com/asheroto/Root-Certificate-Updater/releases)
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/asheroto?label=Sponsor&logo=GitHub)](https://github.com/sponsors/asheroto?frequency=one-time&sponsor=asheroto)
+<a href="https://ko-fi.com/asheroto"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Ko-Fi Button" height="20px"></a>
+<a href="https://www.buymeacoffee.com/asheroto"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=Root-Certificate-Updater&button_colour=FFDD00&font_colour=000000&font_family=Lato&outline_colour=000000&coffee_colour=ffffff)" height="40px"></a>
 
-[![Version](https://img.shields.io/badge/version-5.0.0-blue)](https://github.com/asheroto/UpdateRootCertificates/releases)
+# UpdateRootCertificates (Root Certificate Updater)
+
+> [!NOTE]
+> UpdateRootCertificates has undergone a major transition. It no longer relies on .NET Framework dependencies or pre-packaged certificate trust lists. It is now fully Python-based and dynamically fetches the latest certificate trust lists directly from Microsoft, downloading and installing the current certificates at runtime. This approach is more reliable than relying on Windows' automatic certificate download mechanism, which is supposed to handle this but does not reliably work on older systems.
 
 Rebuilds the Windows root certificate trust store using current data from Microsoft. No external tools, no dependencies, no installation, no Windows Update required.
-
-Created by [asheroto](https://github.com/asheroto).
-
----
 
 ## Why this exists
 
@@ -25,8 +29,6 @@ The result is a system with an outdated or incomplete trust store, which can cau
 - General connectivity issues with modern services
 
 This tool was created to rebuild the trust store directly using current Microsoft trust data, in a way that does not depend on Windows Update or on the OS successfully retrieving missing certificates on its own.
-
----
 
 ## What it does
 
@@ -48,8 +50,6 @@ For the disallowed list, the tool downloads and parses the CTL in the same way, 
 
 A log file is written to `%TEMP%\UpdateRootCertificates.log`.
 
----
-
 ## Limitations
 
 This tool is not a perfect or complete solution.
@@ -57,8 +57,6 @@ This tool is not a perfect or complete solution.
 - **It does not remove outdated trusted roots.** Certificates already in the trust store that are no longer in Microsoft's current list are left in place. If needed, these can be removed manually via `certmgr.msc` or the registry under `HKLM\SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates`.
 - **Disallowed certs are handled by removal, not by populating the Disallowed store.** Microsoft does not publish the raw certificate bytes for blocked certs on their CDN, so the Disallowed store cannot be populated directly. Instead, any disallowed certificates found in the trusted root store are deleted. This provides equivalent protection for the common case.
 - **A reboot is required for changes to take full effect.** Some applications and system components cache certificate store state and will not pick up changes until the system is restarted.
-
----
 
 ## Usage
 
@@ -76,8 +74,6 @@ UpdateRootCertificates.exe --verbose
 
 When run interactively (double-clicked or from a terminal), the tool pauses at the end and waits for Enter before closing.
 
----
-
 ## Features
 
 - No external dependencies
@@ -88,8 +84,6 @@ When run interactively (double-clicked or from a terminal), the tool pauses at t
 - Works on Windows XP through Windows 11
 - Useful for legacy, offline, restricted, and recovery scenarios
 - Requires internet access to reach `ctldl.windowsupdate.com`
-
----
 
 ## Building
 
