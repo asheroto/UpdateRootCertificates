@@ -418,7 +418,10 @@ def process_disallowed(cab_url, root_reg_path, work_dir):
 
     thumbprints = parse_ctl_thumbprints(ctl_bytes)
     if not thumbprints:
-        status("  No disallowed certificates found -- skipping")
+        if ctl_bytes:
+            status("  Warning: CTL parsed (%d bytes) but no thumbprints found -- format may have changed" % len(ctl_bytes))
+        else:
+            status("  No disallowed certificates found -- skipping")
         return
     status("  Found %d disallowed certificates" % len(thumbprints))
 

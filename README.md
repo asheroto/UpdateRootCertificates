@@ -75,7 +75,7 @@ When run interactively (double-clicked or from a terminal), the tool pauses at t
 
 - No external dependencies
 - Writes certificates directly to the Windows registry
-- No `updroots.exe`, no `certutil`, no OpenSSL
+- No `updroots`, no `certutil`
 - Does not require Windows Update
 - Does not require installation
 - Works on Windows XP through Windows 11
@@ -92,6 +92,9 @@ Build the release artifact (`dist\UpdateRootCertificates.exe`) with:
 
 ### Prerequisites
 
+<details>
+<summary>Click to expand</summary>
+
 **Python 2.7 (32-bit)**
 
 Required to support Windows XP through Windows 11 with a single binary. PyInstaller packages it into a self-contained executable.
@@ -107,6 +110,8 @@ Last version with reliable Windows XP compatibility. Installed automatically by 
 **Microsoft VC++ 2008 Runtime (VC90, x86)**
 
 Required by the Python 2.7 runtime on Windows XP. Bundled automatically by PyInstaller from `C:\Windows\WinSxS\x86_microsoft.vc90.crt_*` as a private assembly.
+
+</details>
 
 ### Output
 
