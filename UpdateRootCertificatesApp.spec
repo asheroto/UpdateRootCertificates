@@ -33,5 +33,6 @@ exe = EXE(
     strip=False,
     upx=True,
     console=True,
-    icon=os.path.join(spec_dir, 'icon.ico')
+    icon=os.path.join(spec_dir, 'icon.ico'),
+    version=os.path.join(spec_dir, 'version_info.txt')
 )
