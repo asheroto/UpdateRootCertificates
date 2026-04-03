@@ -19,55 +19,19 @@ Python packages
 Install via:
     python -m pip install pip==20.3.4 pyinstaller==3.4
 
-WinRAR
-- WinRAR x86 version 7.1.0.0
-  Required files:
-    Rar.exe
-    Default32.SFX
-
-  Default paths:
-    C:\Program Files\WinRAR\x86\Rar.exe
-    C:\Program Files\WinRAR\x86\Default32.SFX
-
-  Notes:
-  - Must use Default32.SFX (32-bit stub) for Windows XP compatibility
-  - 64-bit or newer stubs will fail on XP ("not a valid Win32 application")
-
-rcedit
-- Used to set icon on SFX stub and final EXE
-- Installed via Chocolatey or manually
-
-  Default path:
-    C:\ProgramData\chocolatey\bin\rcedit.exe
-
-Notes
-- OpenSSL is NOT required; certificate store updates use the Windows CryptoAPI directly
-
 Microsoft VC++ Runtime (VC90)
-- Visual C++ 2008 SP1 (x86) runtime files
-- Automatically copied from:
-    C:\Windows\WinSxS\x86_microsoft.vc90.crt_*
-
-  Files included:
-    msvcr90.dll
-    msvcp90.dll
-    msvcm90.dll
-    Microsoft.VC90.CRT.manifest
+- Bundled automatically by PyInstaller via win_private_assemblies=True in the spec
+- No manual step required
 
 Output
 - Final distributable:
     dist\UpdateRootCertificates.exe
 
-- This is a self-extracting archive (SFX)
-- Extracts to:
-    %TEMP%\UpdateRootCertificates
-- Runs the embedded Python application
+- Single self-contained executable (PyInstaller onefile)
 - No external dependencies required on target system (including XP)
 
 Notes
 - Built EXE targets Windows XP through Windows 11
-- Uses PyInstaller onedir mode for reliability
-- SFX wrapper provides single-file distribution
 #>
 
 # -- Paths ---------------------------------------------------------------------
