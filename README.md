@@ -1,6 +1,10 @@
 # UpdateRootCertificates
 
-Rebuilds the Windows root certificate trust store using current data from Microsoft. Requires no external tools, no installation, and no Windows Update.
+[![Version](https://img.shields.io/badge/version-5.0.0-blue)](https://github.com/asheroto/UpdateRootCertificates/releases)
+
+Rebuilds the Windows root certificate trust store using current data from Microsoft. No external tools, no dependencies, no installation, no Windows Update required.
+
+Created by [asheroto](https://github.com/asheroto).
 
 ---
 
@@ -26,19 +30,58 @@ This tool was created to rebuild the trust store directly using current Microsof
 
 ## What it does
 
-UpdateRootCertificates downloads Microsoft's current trust list CAB files, extracts them, and applies them directly to the local certificate store using the Windows CryptoAPI. No third-party tools are required.
+UpdateRootCertificates downloads Microsoft's current trust list CAB files, extracts them, and writes the certificates directly to the Windows registry certificate store. No third-party tools are required.
 
 It handles the two trust lists published by Microsoft:
 
-1. `authrootstl.cab` — trusted root certificates, applied to the `AuthRoot` store
-2. `disallowedcertstl.cab` — revoked and explicitly disallowed certificates, applied to the `Disallowed` store
+1. `authrootstl.cab` — trusted root certificates, written to `HKLM\SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates`
+2. `disallowedcertstl.cab` — revoked and explicitly disallowed certificates
+
+For the trusted root list, the tool:
+
+1. Downloads and extracts the CAB file using `expand.exe`
+2. Parses the CTL to extract the thumbprints of all trusted certificates
+3. Downloads each individual `.crt` file in parallel from Microsoft's CDN
+4. Writes each certificate directly to the registry
+
+For the disallowed list, the tool downloads and parses the CTL in the same way, then removes any matching certificates from the trusted root store. Microsoft does not publish the raw bytes for disallowed certificates on their CDN, so the Disallowed store cannot be populated directly.
+
+A log file is written to `%TEMP%\UpdateRootCertificates.log`.
+
+---
+
+## Limitations
+
+This tool is not a perfect or complete solution.
+
+- **It does not remove outdated trusted roots.** Certificates already in the trust store that are no longer in Microsoft's current list are left in place. If needed, these can be removed manually via `certmgr.msc` or the registry under `HKLM\SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates`.
+- **Disallowed certs are handled by removal, not by populating the Disallowed store.** Microsoft does not publish the raw certificate bytes for blocked certs on their CDN, so the Disallowed store cannot be populated directly. Instead, any disallowed certificates found in the trusted root store are deleted. This provides equivalent protection for the common case.
+- **A reboot is required for changes to take full effect.** Some applications and system components cache certificate store state and will not pick up changes until the system is restarted.
+
+---
+
+## Usage
+
+Run the executable directly. No arguments are required.
+
+```
+UpdateRootCertificates.exe
+```
+
+Pass `-v` or `--verbose` to print detailed output including download URLs, byte counts, and per-certificate results:
+
+```
+UpdateRootCertificates.exe --verbose
+```
+
+When run interactively (double-clicked or from a terminal), the tool pauses at the end and waits for Enter before closing.
 
 ---
 
 ## Features
 
 - No external dependencies
-- Applies trust data using the Windows CryptoAPI directly
+- Writes certificates directly to the Windows registry
 - No `updroots.exe`, no `certutil`, no OpenSSL
 - Does not require Windows Update
 - Does not require installation
@@ -60,7 +103,7 @@ Build the release artifact (`dist\UpdateRootCertificates.exe`) with:
 
 **Python 2.7 (32-bit)**
 
-Required to support Windows XP through Windows 11 with a single binary. PyInstaller packages it into a self-contained directory.
+Required to support Windows XP through Windows 11 with a single binary. PyInstaller packages it into a self-contained executable.
 
 Expected at:
 - `C:\Python27\python.exe`
@@ -70,32 +113,10 @@ Expected at:
 
 Last version with reliable Windows XP compatibility. Installed automatically by the build script.
 
-**WinRAR (32-bit, version 7.1.0.0)**
-
-Used to produce the self-extracting archive. The SFX format creates a standalone `.exe` that extracts its contents and runs a launcher script. The 32-bit build covers both 32-bit and 64-bit systems.
-
-Required files:
-- `C:\Program Files\WinRAR\x86\Rar.exe`
-- `C:\Program Files\WinRAR\x86\Default32.SFX`
-
-The 32-bit SFX stub (`Default32.SFX`) is required for Windows XP compatibility. 64-bit or newer stubs will fail on XP.
-
-**rcedit**
-
-Used to embed the custom icon into the SFX stub before WinRAR appends the archive data. Modifying PE resources after the archive has been appended would corrupt it.
-
-Available via Chocolatey:
-
-```powershell
-choco install rcedit
-```
-
-Expected at: `C:\ProgramData\chocolatey\bin\rcedit.exe`
-
 **Microsoft VC++ 2008 Runtime (VC90, x86)**
 
-Required by the Python 2.7 runtime on Windows XP. Copied automatically from `C:\Windows\WinSxS\x86_microsoft.vc90.crt_*` during the build.
+Required by the Python 2.7 runtime on Windows XP. Bundled automatically by PyInstaller from `C:\Windows\WinSxS\x86_microsoft.vc90.crt_*` as a private assembly.
 
 ### Output
 
-`dist\UpdateRootCertificates.exe` — a self-extracting archive that extracts to `%TEMP%\UpdateRootCertificates` and runs automatically.
+`dist\UpdateRootCertificates.exe` — a single self-contained executable. No installer, no extraction step, no external dependencies.
