@@ -31,10 +31,7 @@ This tool was created to rebuild the trust store directly using current Microsof
 
 UpdateRootCertificates downloads Microsoft's current trust list CAB files, extracts them, and writes the certificates directly to the Windows registry certificate store. No third-party tools are required.
 
-It handles the two trust lists published by Microsoft:
-
-1. `authrootstl.cab` — trusted root certificates, written to `HKLM\SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates`
-2. `disallowedcertstl.cab` — revoked and explicitly disallowed certificates
+It processes the trusted root certificate list published by Microsoft (`authrootstl.cab`), writing certificates to `HKLM\SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates`.
 
 For the trusted root list, the tool:
 
@@ -43,8 +40,6 @@ For the trusted root list, the tool:
 3. Downloads each individual `.crt` file in parallel from Microsoft's CDN
 4. Writes each certificate directly to the registry
 
-For the disallowed list, the tool downloads and parses the CTL in the same way, then removes any matching certificates from the trusted root store. Microsoft does not publish the raw bytes for disallowed certificates on their CDN, so the Disallowed store cannot be populated directly.
-
 A log file is written to `%TEMP%\UpdateRootCertificates.log`.
 
 ## Limitations
@@ -52,7 +47,7 @@ A log file is written to `%TEMP%\UpdateRootCertificates.log`.
 This tool is not a perfect or complete solution.
 
 - **It does not remove outdated trusted roots.** Certificates already in the trust store that are no longer in Microsoft's current list are left in place. If needed, these can be removed manually via `certmgr.msc` or the registry under `HKLM\SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates`.
-- **Disallowed certs are handled by removal, not by populating the Disallowed store.** Microsoft does not publish the raw certificate bytes for blocked certs on their CDN, so the Disallowed store cannot be populated directly. Instead, any disallowed certificates found in the trusted root store are deleted. This provides equivalent protection for the common case.
+- **The Disallowed certificate store is not updated.** Microsoft's disallowed CTL (`disallowedcertstl.cab`) uses MD5 and SHA-384 subject identifiers rather than SHA-1 thumbprints. The Windows Disallowed registry store is keyed by SHA-1 thumbprint, so the CTL identifiers cannot be mapped to registry entries without the raw certificate DER bytes, which Microsoft does not publish on their CDN. The disallowed list also contains intermediate and end-entity certificates, not root CAs, so they would not appear in the root store regardless. For this reason, disallowed certificate processing is skipped entirely.
 - **A reboot is required for changes to take full effect.** Some applications and system components cache certificate store state and will not pick up changes until the system is restarted.
 
 ## Usage
@@ -67,6 +62,12 @@ Pass `-v` or `--verbose` to print detailed output including download URLs, byte 
 
 ```
 UpdateRootCertificates.exe --verbose
+```
+
+Pass `--debug` to print low-level DER parsing diagnostics (implies `--verbose`):
+
+```
+UpdateRootCertificates.exe --debug
 ```
 
 When run interactively (double-clicked or from a terminal), the tool pauses at the end and waits for Enter before closing.

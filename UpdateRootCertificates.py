@@ -1,7 +1,7 @@
 # UpdateRootCertificates
 # Created by asheroto
 # https://github.com/asheroto/UpdateRootCertificates
-# Version 5.0.0
+# Version 5.0.1
 #
 # Rebuilds the Windows root certificate trust store using current data from
 # Microsoft. Downloads authrootstl.cab and disallowedcertstl.cab, parses the
@@ -10,6 +10,7 @@
 
 import os
 import sys
+import argparse
 import subprocess
 import tempfile
 import traceback
@@ -41,15 +42,14 @@ except ImportError:
 LOG_FILE  = os.path.join(os.environ.get("TEMP", "C:\\"), "UpdateRootCertificates.log")
 _log_lock = threading.Lock()
 
-AUTHROOT_CAB_URL   = "http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab"
-DISALLOWED_CAB_URL = "http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/disallowedcertstl.cab"
-CERT_CDN_URL       = "http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt"
+AUTHROOT_CAB_URL = "http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab"
+CERT_CDN_URL     = "http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt"
 
-ROOT_REG_PATH       = r"SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates"
-DISALLOWED_REG_PATH = r"SOFTWARE\Microsoft\SystemCertificates\Disallowed\Certificates"
+ROOT_REG_PATH = r"SOFTWARE\Microsoft\SystemCertificates\ROOT\Certificates"
 
 THREAD_COUNT = 16
 VERBOSE      = False
+DEBUG        = False
 
 
 # -- Logging -------------------------------------------------------------------
@@ -72,6 +72,13 @@ def status(msg):
 def verbose(msg):
     """Print to console only in verbose mode; always log to file."""
     if VERBOSE:
+        print(msg)
+    log(msg)
+
+
+def debug(msg):
+    """Print to console only in debug mode; always log to file."""
+    if DEBUG:
         print(msg)
     log(msg)
 
@@ -243,9 +250,13 @@ def parse_ctl_thumbprints(ctl_bytes):
 
     thumbprints = []
     offset = 0
+    seq_index = 0
     while offset < len(data):
+        prev_offset = offset
         tag, val, offset = der_read(data, offset)
         if tag != 0x30 or not val:
+            debug("  [debug] seq[%d] offset=%d tag=0x%02X len=%d -- skipped (not SEQUENCE or empty)" % (seq_index, prev_offset, tag, len(val) if val else 0))
+            seq_index += 1
             continue
 
         # Peek at first child of this SEQUENCE
@@ -253,10 +264,14 @@ def parse_ctl_thumbprints(ctl_bytes):
         try:
             c1tag, c1val, _ = der_read(inner, 0)
         except Exception:
+            debug("  [debug] seq[%d] offset=%d len=%d -- skipped (could not read first child)" % (seq_index, prev_offset, len(val)))
+            seq_index += 1
             continue
 
         # trustedSubjects: first child is a SEQUENCE (TrustedSubject)
         if c1tag != 0x30 or not c1val:
+            debug("  [debug] seq[%d] offset=%d len=%d -- skipped (first child tag=0x%02X, not SEQUENCE)" % (seq_index, prev_offset, len(val), c1tag))
+            seq_index += 1
             continue
 
         # TrustedSubject: first child is a 20-byte OCTET STRING (thumbprint)
@@ -264,12 +279,17 @@ def parse_ctl_thumbprints(ctl_bytes):
         try:
             t2, v2, _ = der_read(inner2, 0)
         except Exception:
+            debug("  [debug] seq[%d] offset=%d len=%d -- skipped (could not read grandchild)" % (seq_index, prev_offset, len(val)))
+            seq_index += 1
             continue
 
         if t2 != 0x04 or not (16 <= len(v2) <= 64):
+            debug("  [debug] seq[%d] offset=%d len=%d -- skipped (grandchild tag=0x%02X len=%d, not 16-64 byte OCTET STRING)" % (seq_index, prev_offset, len(val), t2, len(v2)))
+            seq_index += 1
             continue
 
         # Found trustedSubjects -- extract all thumbprints
+        debug("  [debug] seq[%d] offset=%d len=%d -- MATCHED as trustedSubjects (first OCTET STRING is %d bytes)" % (seq_index, prev_offset, len(val), len(v2)))
         ioffset = 0
         while ioffset < len(inner):
             stag, sval, ioffset = der_read(inner, ioffset)
@@ -278,7 +298,11 @@ def parse_ctl_thumbprints(ctl_bytes):
             try:
                 ttag, tval, _ = der_read(bytearray(sval), 0)
                 if ttag == 0x04 and 16 <= len(tval) <= 64:
-                    thumbprints.append(binascii.hexlify(bytes(tval)).decode("ascii"))
+                    hex_val = binascii.hexlify(bytes(tval)).decode("ascii")
+                    debug("  [debug] thumbprint %d bytes: %s" % (len(tval), hex_val.upper()))
+                    thumbprints.append(hex_val)
+                elif DEBUG:
+                    debug("  [debug] skipped entry: tag=0x%02X len=%d" % (ttag, len(tval)))
             except Exception:
                 pass
         break
@@ -336,6 +360,8 @@ def process_authroot(cab_url, reg_path, work_dir):
         status("  No certificates found in trust list -- skipping")
         return
     status("  Found %d certificates" % len(thumbprints))
+    for t in sorted(thumbprints):
+        verbose("    %s" % t.upper())
 
     # -- Parallel cert download ------------------------------------------------
     total = len(thumbprints)
@@ -388,84 +414,6 @@ def process_authroot(cab_url, reg_path, work_dir):
         parts.append("%d failed" % failed)
     if miss:
         parts.append("%d unavailable on CDN" % miss)
-    status("  Done: %s" % ", ".join(parts))
-
-
-def process_disallowed(cab_url, root_reg_path, work_dir):
-    """
-    Pipeline for the disallowed store:
-      1. Download CAB and extract STL
-      2. Parse CTL to get SHA-1 thumbprints of disallowed certs
-      3. Remove any matching certificates from the root store
-
-    The disallowed cert bytes are not published on Microsoft's CDN, so
-    we cannot populate the Disallowed registry store directly. Instead,
-    we remove any disallowed thumbprints found in the trusted root store,
-    which achieves the same protection.
-    """
-    cab_path = os.path.join(work_dir, "disallowed.cab")
-    stl_dir  = os.path.join(work_dir, "disallowed")
-
-    status("  Downloading disallowed list...")
-    download_file(cab_url, cab_path)
-    stl_path = extract_cab(cab_path, stl_dir)
-
-    with open(stl_path, "rb") as f:
-        raw = f.read()
-
-    ctl_bytes = extract_ctl_bytes(raw)
-    verbose("  CTL: %d bytes" % len(ctl_bytes))
-
-    thumbprints = parse_ctl_thumbprints(ctl_bytes)
-    if not thumbprints:
-        if ctl_bytes:
-            status("  Warning: CTL parsed (%d bytes) but no thumbprints found -- format may have changed" % len(ctl_bytes))
-        else:
-            status("  No disallowed certificates found -- skipping")
-        return
-    status("  Found %d disallowed certificates" % len(thumbprints))
-
-    # -- Remove matching certs from the root store -----------------------------
-    status("  Scanning root store for matches...")
-    disallowed_set = set(t.upper() for t in thumbprints)
-    removed = 0
-    skipped = 0
-
-    try:
-        key = winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE, root_reg_path,
-            0, winreg.KEY_READ | winreg.KEY_WRITE
-        )
-    except EnvironmentError as e:
-        raise Exception("Could not open root store: %s" % str(e))
-
-    try:
-        subkeys = []
-        i = 0
-        while True:
-            try:
-                subkeys.append(winreg.EnumKey(key, i))
-                i += 1
-            except EnvironmentError:
-                break
-
-        for name in subkeys:
-            if name.upper() in disallowed_set:
-                try:
-                    winreg.DeleteKey(key, name)
-                    verbose("  Removed: %s" % name)
-                    removed += 1
-                except Exception as e:
-                    verbose("  Failed to remove %s: %s" % (name, str(e)))
-                    skipped += 1
-    finally:
-        winreg.CloseKey(key)
-
-    parts = ["%d removed from root store" % removed]
-    if skipped:
-        parts.append("%d could not be removed" % skipped)
-    if not removed and not skipped:
-        parts = ["none present in root store"]
     status("  Done: %s" % ", ".join(parts))
 
 
@@ -522,24 +470,35 @@ def main():
         print("")
         status("[AuthRoot]")
         process_authroot(AUTHROOT_CAB_URL, ROOT_REG_PATH, WORK_DIR)
-
-        print("")
-        status("[Disallowed]")
-        try:
-            process_disallowed(DISALLOWED_CAB_URL, ROOT_REG_PATH, WORK_DIR)
-        except Exception as e:
-            log("WARNING: disallowed store update failed (non-fatal): %s" % str(e))
-            status("  Warning: update failed (non-fatal)")
-            verbose("  %s" % str(e))
     finally:
         rmtree(WORK_DIR)
         log("Work dir removed")
 
 
 if __name__ == "__main__":
-    VERBOSE = "-v" in sys.argv or "--verbose" in sys.argv
+    parser = argparse.ArgumentParser(
+        description="Rebuilds the Windows root certificate trust store using current data from Microsoft."
+    )
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Print detailed output including thumbprints and per-certificate results"
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print low-level DER parsing diagnostics (implies --verbose)"
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="UpdateRootCertificates v5.0.1 by asheroto"
+    )
+    args = parser.parse_args()
+    DEBUG   = args.debug
+    VERBOSE = args.verbose or args.debug
 
-    print("UpdateRootCertificates v5.0.0 by asheroto")
+    print("UpdateRootCertificates v5.0.1 by asheroto")
     print("https://github.com/asheroto/UpdateRootCertificates")
 
     try:
@@ -551,6 +510,11 @@ if __name__ == "__main__":
         print("A reboot is required for changes to take full effect.")
         print("")
         print("Log: %s" % LOG_FILE)
+    except KeyboardInterrupt:
+        log("Cancelled by user")
+        print("")
+        print("Cancelled.")
+        sys.exit(1)
     except Exception as e:
         log("FATAL: %s" % str(e))
         log(traceback.format_exc())
