@@ -5,10 +5,10 @@
 <a href="https://ko-fi.com/asheroto"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Ko-Fi Button" height="20px"></a>
 <a href="https://www.buymeacoffee.com/asheroto"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=Root-Certificate-Updater&button_colour=FFDD00&font_colour=000000&font_family=Lato&outline_colour=000000&coffee_colour=ffffff)" height="40px"></a>
 
-# UpdateRootCertificates (Root Certificate Updater)
-
 > [!NOTE]
-> UpdateRootCertificates has undergone a major transition. It no longer relies on .NET Framework dependencies or pre-packaged certificate trust lists. It is now fully Python-based and dynamically fetches the latest certificate trust lists directly from Microsoft, downloading and installing the current certificates at runtime. This approach is more reliable than relying on Windows' automatic certificate download mechanism, which is supposed to handle this but does not reliably work on older systems.
+> UpdateRootCertificates has undergone a major transition. It no longer relies on .NET Framework dependencies or pre-packaged certificate trust lists. It is now fully Python-based and dynamically fetches the latest certificate trust lists directly from Microsoft, downloading and installing the current certificates at runtime. This approach is more reliable than relying on Windows' automatic certificate download mechanism, which is supposed to handle this but does not reliablywork on older systems.
+
+# UpdateRootCertificates (Root Certificate Updater)
 
 Rebuilds the Windows root certificate trust store using current data from Microsoft. No external tools, no dependencies, no installation, no Windows Update required.
 
