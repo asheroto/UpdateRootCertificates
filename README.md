@@ -80,7 +80,6 @@ When run interactively (double-clicked or from a terminal), the tool pauses at t
 - Does not require Windows Update
 - Does not require installation
 - Works on Windows XP through Windows 11
-- Useful for legacy, offline, restricted, and recovery scenarios
 - Requires internet access to reach `ctldl.windowsupdate.com`
 
 ## Building
