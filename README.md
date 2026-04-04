@@ -115,7 +115,7 @@ Required by the Python 2.7 runtime on Windows XP. Bundled automatically by PyIns
 
 ### Output
 
-`dist\UpdateRootCertificates.exe` — a single self-contained executable. No installer, no extraction step, no external dependencies.
+`dist\UpdateRootCertificates.exe` - a single self-contained executable. No installer, no extraction step, no external dependencies.
 
 ## Support
 
