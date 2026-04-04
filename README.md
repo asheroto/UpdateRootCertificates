@@ -3,7 +3,7 @@
 [![GitHub Downloads - All Releases](https://img.shields.io/github/downloads/asheroto/Root-Certificate-Updater/total)](https://github.com/asheroto/Root-Certificate-Updater/releases)
 
 > [!NOTE]
-> UpdateRootCertificates has undergone a major transition. It no longer relies on .NET Framework dependencies. It is now fully Python-based and dynamically fetches the latest certificate trust lists directly from Microsoft, downloading and installing the current certificates at runtime. This approach is more reliable than relying on Windows' automatic certificate download mechanism, which is supposed to handle this but does not reliablywork on older systems.
+> UpdateRootCertificates has undergone a major transition. It no longer relies on .NET Framework dependencies. It is now fully Python-based and dynamically fetches the latest certificate trust lists directly from Microsoft, downloading and installing the current certificates at runtime. This approach is more reliable than relying on Windows' automatic certificate download mechanism, which is supposed to handle this but does not reliable work on older systems.
 
 # UpdateRootCertificates (Root Certificate Updater)
 
