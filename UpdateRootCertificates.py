@@ -490,15 +490,15 @@ if __name__ == "__main__":
         help="Print low-level DER parsing diagnostics (implies --verbose)"
     )
     parser.add_argument(
-        "--version",
+        "-V", "--version",
         action="version",
-        version="UpdateRootCertificates v5.0.1 by asheroto"
+        version="UpdateRootCertificates v5.0.2 by asheroto"
     )
     args = parser.parse_args()
     DEBUG   = args.debug
     VERBOSE = args.verbose or args.debug
 
-    print("UpdateRootCertificates v5.0.1 by asheroto")
+    print("UpdateRootCertificates v5.0.2 by asheroto")
     print("https://github.com/asheroto/UpdateRootCertificates")
 
     try:

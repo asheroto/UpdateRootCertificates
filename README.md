@@ -70,6 +70,12 @@ Pass `--debug` to print low-level DER parsing diagnostics (implies `--verbose`):
 UpdateRootCertificates.exe --debug
 ```
 
+Pass `-V` or `--version` to print the version and exit:
+
+```
+UpdateRootCertificates.exe --version
+```
+
 When run interactively (double-clicked or from a terminal), the tool pauses at the end and waits for Enter before closing.
 
 ## Features
