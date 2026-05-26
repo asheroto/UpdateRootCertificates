@@ -4,13 +4,12 @@
 # Version 5.1.0
 #
 # Rebuilds the Windows root certificate trust store using current data from
-# Microsoft. Downloads authrootstl.cab and disallowedcertstl.cab, parses the
-# certificate trust lists, and writes the results directly to the registry.
+# Microsoft. Downloads authrootstl.cab, parses the certificate trust list,
+# and writes the results directly to the registry.
 # Compatible with Windows XP through Windows 11.
 #
 # --download-only [DIR]  Download certs to DIR on a machine with internet
 #                        access; no registry changes, no admin required.
-#                        Default DIR: RootCertificates (current folder).
 # --source <DIR>         Apply certs from DIR (flash drive, UNC path, etc.)
 #                        instead of downloading from Microsoft CDN.
 
@@ -663,7 +662,6 @@ if __name__ == "__main__":
             "No admin rights required. Run on a machine with internet access, then "
             "transfer DIR to the target machine and use --source to apply. "
             "Saves authroot.cab, authroot.stl, and all .crt files. "
-            "Default DIR: RootCertificates (in the current folder)"
         )
     )
     parser.add_argument(

@@ -10,17 +10,21 @@ Two new flags enable a two-step workflow for machines that cannot reach the inte
 
 ```
 UpdateRootCertificates.exe --download-only
+UpdateRootCertificates.exe --download-only D:\MyFolder
+UpdateRootCertificates.exe --download-only "\\server\share\certs"
 ```
 
-Saves `authroot.cab`, `authroot.stl`, and all `.crt` files to `RootCertificates\` in the current directory (or a custom path if specified). Transfer the folder to the target machine via USB drive, network share, UNC path, or any other method.
+Omitting `DIR` saves to a `RootCertificates` subfolder in the current directory. Saves `authroot.cab`, `authroot.stl`, and all `.crt` files. Transfer the folder to the target machine via USB drive, network share, UNC path, or any other method.
 
 `--source <DIR>` - Apply certificates from a folder produced by `--download-only` instead of downloading from Microsoft. Useful for offline, restricted, or air-gapped environments. Admin rights required.
 
 ```
 UpdateRootCertificates.exe --source C:\path\to\folder
+UpdateRootCertificates.exe --source D:\MyFolder
+UpdateRootCertificates.exe --source "\\server\share\certs"
 ```
 
-The source directory must contain `authroot.stl` (or `authroot.cab`) and the `.crt` files from the download step.
+`DIR` must contain `authroot.stl` (or `authroot.cab`) and the `.crt` files produced by `--download-only`.
 
 ---
 
