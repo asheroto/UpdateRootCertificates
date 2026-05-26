@@ -76,6 +76,30 @@ Pass `-V` or `--version` to print the version and exit:
 UpdateRootCertificates.exe --version
 ```
 
+### Offline / air-gapped workflow
+
+For machines that cannot reach the internet, use the two-step offline workflow.
+
+**Step 1** - On a machine with internet access, download the certificates to a folder. No admin rights required.
+
+```
+UpdateRootCertificates.exe --download-only
+```
+
+This saves `authroot.cab`, `authroot.stl`, and all `.crt` files to a `RootCertificates` folder in the current directory. To specify a different destination:
+
+```
+UpdateRootCertificates.exe --download-only C:\path\to\folder
+```
+
+**Step 2** - Transfer the folder to the target machine (USB drive, network share, UNC path, etc.), then apply the certificates:
+
+```
+UpdateRootCertificates.exe --source C:\path\to\folder
+```
+
+The `--source` directory must contain `authroot.stl` (or `authroot.cab`) and the `.crt` files produced in step 1. Admin rights are required for this step.
+
 When run interactively (double-clicked or from a terminal), the tool pauses at the end and waits for Enter before closing.
 
 ## Features
@@ -86,7 +110,9 @@ When run interactively (double-clicked or from a terminal), the tool pauses at t
 - Does not require Windows Update
 - Does not require installation
 - Works on Windows XP through Windows 11
-- Requires internet access to reach `ctldl.windowsupdate.com`
+- Useful for legacy, offline, restricted, and recovery scenarios
+- Offline workflow: download on one machine, apply on another (`--download-only` / `--source`)
+- Requires internet access to reach `ctldl.windowsupdate.com` (or use `--source` for offline)
 
 ## Building
 

@@ -1,15 +1,22 @@
 # UpdateRootCertificates
 # Created by asheroto
 # https://github.com/asheroto/UpdateRootCertificates
-# Version 5.0.1
+# Version 5.1.0
 #
 # Rebuilds the Windows root certificate trust store using current data from
 # Microsoft. Downloads authrootstl.cab and disallowedcertstl.cab, parses the
 # certificate trust lists, and writes the results directly to the registry.
 # Compatible with Windows XP through Windows 11.
+#
+# --download-only [DIR]  Download certs to DIR on a machine with internet
+#                        access; no registry changes, no admin required.
+#                        Default DIR: RootCertificates (current folder).
+# --source <DIR>         Apply certs from DIR (flash drive, UNC path, etc.)
+#                        instead of downloading from Microsoft CDN.
 
 import os
 import sys
+import shutil
 import argparse
 import subprocess
 import tempfile
@@ -334,7 +341,7 @@ def write_cert_to_registry(reg_path, thumbprint_upper, der_bytes):
 
 # -- Store processing ----------------------------------------------------------
 
-def process_authroot(cab_url, reg_path, work_dir):
+def process_authroot(cab_url, cert_cdn_url, reg_path, work_dir):
     """
     Full pipeline for the trusted root store:
       1. Download CAB and extract STL
@@ -371,7 +378,7 @@ def process_authroot(cab_url, reg_path, work_dir):
     completed = [0]
 
     def fetch(thumb):
-        data = download_bytes(CERT_CDN_URL % thumb)
+        data = download_bytes(cert_cdn_url % thumb)
         with results_lock:
             results[thumb] = data
             completed[0] += 1
@@ -415,6 +422,158 @@ def process_authroot(cab_url, reg_path, work_dir):
     if miss:
         parts.append("%d unavailable on CDN" % miss)
     status("  Done: %s" % ", ".join(parts))
+
+
+# -- Download-only mode --------------------------------------------------------
+
+def run_download_only(cab_url, cert_cdn_url, dest_dir):
+    """
+    Download the CAB, STL, and all .crt files to dest_dir.
+    Does not require admin rights and does not touch the registry.
+    Run on a machine with internet access, then transfer dest_dir to the
+    target machine and apply with --source.
+    """
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
+
+    work_dir = os.path.join(tempfile.gettempdir(), "UpdateRootCertificates_tmp")
+    rmtree(work_dir)
+    os.makedirs(work_dir)
+
+    try:
+        cab_path = os.path.join(work_dir, "authroot.cab")
+        stl_dir  = os.path.join(work_dir, "authroot")
+
+        status("  Downloading trust list...")
+        download_file(cab_url, cab_path)
+        stl_path = extract_cab(cab_path, stl_dir)
+
+        shutil.copy2(cab_path, os.path.join(dest_dir, "authroot.cab"))
+        shutil.copy2(stl_path, os.path.join(dest_dir, "authroot.stl"))
+        verbose("  Saved authroot.cab and authroot.stl to %s" % dest_dir)
+
+        with open(stl_path, "rb") as f:
+            raw = f.read()
+
+        ctl_bytes   = extract_ctl_bytes(raw)
+        thumbprints = parse_ctl_thumbprints(ctl_bytes)
+
+        if not thumbprints:
+            status("  No certificates found in trust list")
+            return
+
+        status("  Found %d certificates" % len(thumbprints))
+        status("  Downloading certificates...")
+
+        total        = len(thumbprints)
+        completed    = [0]
+        saved        = [0]
+        results_lock = threading.Lock()
+
+        def fetch_and_save(thumb):
+            data = download_bytes(cert_cdn_url % thumb)
+            with results_lock:
+                completed[0] += 1
+                if data:
+                    crt_path = os.path.join(dest_dir, thumb.upper() + ".crt")
+                    with open(crt_path, "wb") as fh:
+                        fh.write(data)
+                    saved[0] += 1
+                sys.stdout.write("\r  %d/%d downloaded" % (completed[0], total))
+                sys.stdout.flush()
+
+        if ThreadPool:
+            pool = ThreadPool(THREAD_COUNT)
+            pool.map(fetch_and_save, thumbprints)
+            pool.close()
+            pool.join()
+        else:
+            for t in thumbprints:
+                fetch_and_save(t)
+
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
+        miss = len(thumbprints) - saved[0]
+        status("  Saved %d certificates to: %s" % (saved[0], dest_dir))
+        if miss:
+            status("  %d certificates unavailable on CDN (skipped)" % miss)
+
+    finally:
+        rmtree(work_dir)
+
+
+# -- Offline source mode -------------------------------------------------------
+
+def run_from_source(source_dir, reg_path):
+    """
+    Apply trusted root certificates from a local directory produced by
+    --download-only.  source_dir must contain authroot.stl (or authroot.cab)
+    and <THUMBPRINT>.crt files.
+    """
+    work_dir = os.path.join(tempfile.gettempdir(), "UpdateRootCertificates_tmp")
+    rmtree(work_dir)
+    os.makedirs(work_dir)
+
+    try:
+        stl_src = os.path.join(source_dir, "authroot.stl")
+        cab_src = os.path.join(source_dir, "authroot.cab")
+
+        if os.path.exists(stl_src):
+            stl_path = stl_src
+            verbose("  Using STL: %s" % stl_path)
+        elif os.path.exists(cab_src):
+            stl_dir  = os.path.join(work_dir, "authroot")
+            stl_path = extract_cab(cab_src, stl_dir)
+            verbose("  Extracted STL from: %s" % cab_src)
+        else:
+            raise Exception(
+                "Source directory does not contain authroot.stl or authroot.cab.\n"
+                "Run with --download-only on a machine with internet access first.\n"
+                "Source: %s" % source_dir
+            )
+
+        with open(stl_path, "rb") as f:
+            raw = f.read()
+
+        ctl_bytes   = extract_ctl_bytes(raw)
+        thumbprints = parse_ctl_thumbprints(ctl_bytes)
+
+        if not thumbprints:
+            status("  No certificates found in trust list -- skipping")
+            return
+
+        status("  Found %d certificates in trust list" % len(thumbprints))
+        status("  Applying certificates from source...")
+
+        added   = 0
+        failed  = 0
+        missing = 0
+
+        for thumb in thumbprints:
+            crt_path = os.path.join(source_dir, thumb.upper() + ".crt")
+            if not os.path.exists(crt_path):
+                verbose("  Missing: %s.crt" % thumb.upper())
+                missing += 1
+                continue
+            try:
+                with open(crt_path, "rb") as fh:
+                    der = fh.read()
+                write_cert_to_registry(reg_path, thumb.upper(), der)
+                added += 1
+            except Exception as e:
+                verbose("  Registry write failed for %s: %s" % (thumb.upper(), str(e)))
+                failed += 1
+
+        parts = ["%d added" % added]
+        if failed:
+            parts.append("%d failed" % failed)
+        if missing:
+            parts.append("%d missing from source" % missing)
+        status("  Done: %s" % ", ".join(parts))
+
+    finally:
+        rmtree(work_dir)
 
 
 # -- Cleanup -------------------------------------------------------------------
@@ -469,7 +628,7 @@ def main():
     try:
         print("")
         status("[AuthRoot]")
-        process_authroot(AUTHROOT_CAB_URL, ROOT_REG_PATH, WORK_DIR)
+        process_authroot(AUTHROOT_CAB_URL, CERT_CDN_URL, ROOT_REG_PATH, WORK_DIR)
     finally:
         rmtree(WORK_DIR)
         log("Work dir removed")
@@ -492,24 +651,79 @@ if __name__ == "__main__":
     parser.add_argument(
         "-V", "--version",
         action="version",
-        version="UpdateRootCertificates v5.0.2 by asheroto"
+        version="UpdateRootCertificates v5.1.0 by asheroto"
+    )
+    parser.add_argument(
+        "--download-only",
+        nargs="?",
+        const="RootCertificates",
+        metavar="DIR",
+        help=(
+            "Download certificates to DIR without applying them to the registry. "
+            "No admin rights required. Run on a machine with internet access, then "
+            "transfer DIR to the target machine and use --source to apply. "
+            "Saves authroot.cab, authroot.stl, and all .crt files. "
+            "Default DIR: RootCertificates (in the current folder)"
+        )
+    )
+    parser.add_argument(
+        "--source",
+        metavar="DIR",
+        help=(
+            "Apply certificates from DIR instead of downloading from Microsoft CDN. "
+            "Supports local folders, UNC paths, and flash drives. "
+            "DIR must contain authroot.stl (or authroot.cab) and the .crt files "
+            "produced by --download-only."
+        )
     )
     args = parser.parse_args()
     DEBUG   = args.debug
     VERBOSE = args.verbose or args.debug
 
-    print("UpdateRootCertificates v5.0.2 by asheroto")
+    print("UpdateRootCertificates v5.1.0 by asheroto")
     print("https://github.com/asheroto/UpdateRootCertificates")
 
     try:
         log("Launching...")
-        main()
-        log("DONE")
-        print("")
-        print("Complete.")
-        print("A reboot is required for changes to take full effect.")
-        print("")
-        print("Log: %s" % LOG_FILE)
+
+        if args.download_only is not None:
+            dest = os.path.abspath(args.download_only)
+            print("")
+            status("[AuthRoot] Download-only mode")
+            status("  Destination: %s" % dest)
+            run_download_only(AUTHROOT_CAB_URL, CERT_CDN_URL, dest)
+            log("DONE")
+            print("")
+            print("Download complete.")
+            print("Transfer this folder to the target machine, then run:")
+            print('  UpdateRootCertificates.py --source "%s"' % dest)
+            print("")
+            print("Log: %s" % LOG_FILE)
+
+        elif args.source:
+            src = os.path.abspath(args.source)
+            if not os.path.isdir(src):
+                raise Exception("Source directory not found: %s" % src)
+            print("")
+            status("[AuthRoot] Offline source mode")
+            status("  Source: %s" % src)
+            run_from_source(src, ROOT_REG_PATH)
+            log("DONE")
+            print("")
+            print("Complete.")
+            print("A reboot is required for changes to take full effect.")
+            print("")
+            print("Log: %s" % LOG_FILE)
+
+        else:
+            main()
+            log("DONE")
+            print("")
+            print("Complete.")
+            print("A reboot is required for changes to take full effect.")
+            print("")
+            print("Log: %s" % LOG_FILE)
+
     except KeyboardInterrupt:
         log("Cancelled by user")
         print("")

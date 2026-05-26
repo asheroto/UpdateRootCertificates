@@ -1,8 +1,8 @@
 # UTF-8
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(5, 0, 0, 0),
-    prodvers=(5, 0, 0, 0),
+    filevers=(5, 1, 0, 0),
+    prodvers=(5, 1, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -18,12 +18,12 @@ VSVersionInfo(
           [
             StringStruct(u'CompanyName', u'asheroto'),
             StringStruct(u'FileDescription', u'UpdateRootCertificates'),
-            StringStruct(u'FileVersion', u'5.0.0.0'),
+            StringStruct(u'FileVersion', u'5.1.0.0'),
             StringStruct(u'InternalName', u'UpdateRootCertificates'),
             StringStruct(u'LegalCopyright', u''),
             StringStruct(u'OriginalFilename', u'UpdateRootCertificates.exe'),
             StringStruct(u'ProductName', u'UpdateRootCertificates'),
-            StringStruct(u'ProductVersion', u'5.0.0.0'),
+            StringStruct(u'ProductVersion', u'5.1.0.0'),
           ]
         )
       ]
