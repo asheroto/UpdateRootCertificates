@@ -1,3 +1,19 @@
+## v5.1.1
+
+### Bug fixes
+
+**Fixed `LookupError: unknown encoding: cp65001` when running with `-v` / `--verbose`**
+
+Running the executable with `-v` crashed on consoles set to UTF-8 (`chcp 65001`), such as Windows Terminal or systems with the "Use Unicode UTF-8 for worldwide language support" option enabled. Double-clicking the executable was unaffected, as was every run without `-v`.
+
+Thumbprints parsed from the trust list were being produced as Unicode strings. Verbose mode is the only place they get printed, and Python 2 resolves the console codec lazily at that moment - on a codepage 65001 console it looks up `cp65001`, which Python 2 does not provide, and the run aborted right after `Found N certificates`.
+
+Thumbprints are now kept as plain ASCII byte strings. The values themselves are unchanged, so certificate downloads and registry writes behave exactly as before.
+
+Fixes [#20](https://github.com/asheroto/UpdateRootCertificates/issues/20).
+
+---
+
 ## v5.1.0
 
 ### New features

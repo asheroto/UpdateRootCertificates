@@ -1,7 +1,7 @@
 # UpdateRootCertificates
 # Created by asheroto
 # https://github.com/asheroto/UpdateRootCertificates
-# Version 5.1.0
+# Version 5.1.1
 #
 # Rebuilds the Windows root certificate trust store using current data from
 # Microsoft. Downloads authrootstl.cab, parses the certificate trust list,
@@ -304,7 +304,10 @@ def parse_ctl_thumbprints(ctl_bytes):
             try:
                 ttag, tval, _ = der_read(bytearray(sval), 0)
                 if ttag == 0x04 and 16 <= len(tval) <= 64:
-                    hex_val = binascii.hexlify(bytes(tval)).decode("ascii")
+                    # str() keeps this a byte-str on Python 2. Printing a unicode
+                    # thumbprint to a console at chcp 65001 raises
+                    # "LookupError: unknown encoding: cp65001". No-op on Python 3.
+                    hex_val = str(binascii.hexlify(bytes(tval)).decode("ascii"))
                     debug("  [debug] thumbprint %d bytes: %s" % (len(tval), hex_val.upper()))
                     thumbprints.append(hex_val)
                 elif DEBUG:
@@ -650,7 +653,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-V", "--version",
         action="version",
-        version="UpdateRootCertificates v5.1.0 by asheroto"
+        version="UpdateRootCertificates v5.1.1 by asheroto"
     )
     parser.add_argument(
         "--download-only",
@@ -678,7 +681,7 @@ if __name__ == "__main__":
     DEBUG   = args.debug
     VERBOSE = args.verbose or args.debug
 
-    print("UpdateRootCertificates v5.1.0 by asheroto")
+    print("UpdateRootCertificates v5.1.1 by asheroto")
     print("https://github.com/asheroto/UpdateRootCertificates")
 
     try:
